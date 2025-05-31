@@ -3,12 +3,12 @@ name: likeUser (点赞特定用户)
 on:
   schedule:
     # 每天 UTC 时间 18:00 运行
-    - cron: "0 18 * * *"
+    - cron: '32 22 * * *'
   workflow_dispatch: # 允许手动触发
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 35 # 设置作业超时时间为20分钟
 
     strategy:
@@ -30,10 +30,17 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: |
           npm install
-          sudo apt install -y xvfb
       #github action设置的action环境变量会完全替换掉env文件的读取，所以需要在action里手动进行加载env文件
       - name: Load environment variables
         run: |
@@ -63,5 +70,11 @@ jobs:
 
         shell: bash
 
-      - name: Run a script
-        run: LIKE_SPECIFIC_USER=true node bypasscf.js --USERNAMES "$USERNAMES" --PASSWORDS "$PASSWORDS" --WEBSITE "$WEBSITE"
+      # - name: Run a script(linux)
+      #   run: LIKE_SPECIFIC_USER=true node bypasscf.js --USERNAMES "$USERNAMES" --PASSWORDS "$PASSWORDS" --WEBSITE "$WEBSITE"
+
+      - name: Run a script(windows)
+        run: |
+          $env:LIKE_SPECIFIC_USER="true"
+          node bypasscf.js --USERNAMES "$env:USERNAMES" --PASSWORDS "$env:PASSWORDS" --WEBSITE "$env:WEBSITE"
+        shell: pwsh
